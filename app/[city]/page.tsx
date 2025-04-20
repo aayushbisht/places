@@ -9,9 +9,10 @@ import PlaceCard from '../components/PlaceCard';
 interface Place {
   name: string;
   rating: number;
-  placeId?: string;
   vicinity: string;
+  placeId?: string;
   photoUrl?: string;
+  description?: string;
   geometry: {
     location: {
       lat: number;
@@ -93,7 +94,25 @@ useEffect(() => {
       try {
         const cityLocation = await getCityLocation(city as string);
         const nearbyPlaces = await getNearbyPlaces(map, cityLocation, getPlaceType(activeTab));
-        setPlaces(nearbyPlaces);
+        
+        // Fetch photo URLs for each place
+        const placesWithPhotos = await Promise.all(
+          nearbyPlaces.map(async (place) => {
+            if (place.placeId) {
+              try {
+                const details = await getPlaceDetails(place.placeId);
+                const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 400 });
+                return { ...place, photoUrl };
+              } catch (error) {
+                console.error('Error fetching place details:', error);
+                return place;
+              }
+            }
+            return place;
+          })
+        );
+        
+        setPlaces(placesWithPhotos);
 
         markers.forEach(marker => marker.setMap(null));
         infoWindows.forEach(window => window.close());
@@ -103,7 +122,7 @@ useEffect(() => {
         const newMarkers: google.maps.Marker[] = [];
         const newInfoWindows: google.maps.InfoWindow[] = [];
 
-        nearbyPlaces.forEach((place: Place) => {
+        placesWithPhotos.forEach((place: Place) => {
           const marker = new google.maps.Marker({
             position: new google.maps.LatLng(
               place.geometry.location.lat,
@@ -113,24 +132,16 @@ useEffect(() => {
             title: place.name,
           });
 
-        //   const infoWindow = new google.maps.InfoWindow({
-        //     content: `
-        //       <div style="padding: 8px;">
-        //         <h3 style="margin: 0 0 8px 0;">${place.name}</h3>
-        //         <p style="margin: 0 0 4px 0;">Rating: ${place.rating}</p>
-        //         <p style="margin: 0;">${place.vicinity}</p>
-        //       </div>
-        //     `,
-        //   });
+    
         const infoWindow = new google.maps.InfoWindow({
             content: `
               <div class="p-2 bg-white rounded shadow">
-                <h3 class="text-lg font-semibold mb-2">${place.name || ''}</h3>
+                <h3 class="text-lg font-semibold mb-2 text-black">${place.name || ''}</h3>
                 <div class="flex items-center mb-2">
                   <span class="text-yellow-400">★</span>
-                  <span class="ml-1">${place.rating?.toFixed(1) || 'N/A'}</span>
+                  <span class="ml-1 text-black">${place.rating?.toFixed(1) || 'N/A'}</span>
                 </div>
-                <p class="text-gray-600">${place.vicinity || ''}</p>
+                <p class="text-black">${place.vicinity || ''}</p>
               </div>
             `,
           });
@@ -141,18 +152,19 @@ useEffect(() => {
             if (place.placeId) {
               getPlaceDetails(place.placeId).then((details: google.maps.places.PlaceResult) => {
                 const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 400 });
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${place.geometry.location.lat},${place.geometry.location.lng}&query_place_id=${place.placeId}`;
                 const content = `
-           
                   <div class="p-2">
-                                  <img src="${photoUrl}" alt="${details.name}" class="w-full h-32 object-cover mb-2 rounded" onerror="this.style.display='none'">
-                                  <h3 class="text-lg font-semibold mb-2 text-gray-800">${details.name}</h3>
-                                  <div class="flex items-center mb-2">
-                                    <span class="text-yellow-400">★</span>
-                                    <span class="ml-1 text-gray-800">${details.rating?.toFixed(1) || 'N/A'}</span>
-                                  </div>
-                                  <p class="text-gray-600">${place.vicinity || ''}</p>
-                                  ${details.website ? `<a href="${details.website}" target="_blank" class="text-blue-500 hover:underline">Visit Website</a>` : ''}
-                                </div>
+                    <img src="${photoUrl}" alt="${details.name}" class="w-full h-32 object-cover mb-2 rounded" onerror="this.style.display='none'">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-800">${details.name}</h3>
+                    <div class="flex items-center mb-2">
+                      <span class="text-yellow-400">★</span>
+                      <span class="ml-1 text-gray-800">${details.rating?.toFixed(1) || 'N/A'}</span>
+                    </div>
+                    <p class="text-gray-600">${place.vicinity || ''}</p>
+                    ${details.website ? `<a href="${details.website}" target="_blank" class="text-blue-500 hover:underline">Visit Website</a><br/>` : ''}
+                    <a href="${mapsUrl}" target="_blank" class="text-blue-500 hover:underline">Open in Google Maps</a>
+                  </div>
                 `;
                 infoWindow.setContent(content);
               });
@@ -227,18 +239,6 @@ useEffect(() => {
           ))}
         </div>
 
-          {/* <div className="space-y-4">
-            {places.map((place, index) => (
-            <PlaceCard
-              key={index}
-              place={place}
-              index={index}
-              map={map}
-              infoWindows={infoWindows}
-              markers={markers}
-              />
-            ))}
-          </div> */}
           <h2 className="text-xl font-semibold mb-4">{getTabTitle(activeTab)}</h2>
         
         {isLoading ? (

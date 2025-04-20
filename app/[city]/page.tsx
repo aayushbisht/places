@@ -75,6 +75,115 @@ useEffect(() => {
           const newMap = new google.maps.Map(mapRef.current, {
             center: cityLocation,
             zoom: 12,
+            styles: [
+              {
+                "featureType": "all",
+                "elementType": "labels",
+                "stylers": [
+                  {
+                    "visibility": "on"
+                  }
+                ]
+              },
+              {
+                "featureType": "administrative",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "visibility": "on"
+                  }
+                ]
+              },
+              {
+                "featureType": "landscape",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "color": "#f2f2f2"
+                  }
+                ]
+              },
+              {
+                "featureType": "poi",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "visibility": "off"
+                  }
+                ]
+              },
+              {
+                "featureType": "road",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "visibility": "on"
+                  },
+                  {
+                    "color": "#ffffff"
+                  }
+                ]
+              },
+              {
+                "featureType": "road.highway",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "visibility": "on"
+                  },
+                  {
+                    "color": "#ffffff"
+                  }
+                ]
+              },
+              {
+                "featureType": "road.arterial",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "visibility": "on"
+                  },
+                  {
+                    "color": "#ffffff"
+                  }
+                ]
+              },
+              {
+                "featureType": "road.local",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "visibility": "on"
+                  },
+                  {
+                    "color": "#ffffff"
+                  }
+                ]
+              },
+              {
+                "featureType": "transit",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "visibility": "off"
+                  }
+                ]
+              },
+              {
+                "featureType": "water",
+                "elementType": "all",
+                "stylers": [
+                  {
+                    "color": "#e9e9e9"
+                  }
+                ]
+              }
+            ],
+            disableDefaultUI: true,
+            zoomControl: true,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false
           });
           setMap(newMap);
         }

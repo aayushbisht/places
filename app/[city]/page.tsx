@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SearchBar from '../components/SearchBar';
 import { loadGoogleMapsScript } from '../utils/googleMaps';
+import PlaceCard from '../components/PlaceCard';
 
 interface Place {
   name: string;
@@ -60,13 +61,20 @@ export default function CityPage({ params }: { params: { city: string } }) {
                     const marker = new google.maps.Marker({
                       position: place.geometry?.location,
                       map: newMap,
-                      title: place.name,
+                      title: place.name || '',
+                      label: {
+                        text: place.name || '',
+                        color: '#000000',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        className: 'marker-label'
+                      }
                     });
 
                     const infoWindow = new google.maps.InfoWindow({
                       content: `
-                        <div class="p-2">
-                          <h3 class="text-lg font-semibold mb-2">${place.name}</h3>
+                        <div class="p-2 bg-white rounded shadow">
+                          <h3 class="text-lg font-semibold mb-2">${place.name || ''}</h3>
                           <div class="flex items-center mb-2">
                             <span class="text-yellow-400">★</span>
                             <span class="ml-1">${place.rating?.toFixed(1) || 'N/A'}</span>
@@ -192,24 +200,14 @@ export default function CityPage({ params }: { params: { city: string } }) {
           <h2 className="text-2xl font-light mb-4 text-white">Top Places in {decodeURIComponent(params.city)}</h2>
           <div className="space-y-4">
             {places.map((place, index) => (
-              <div
-                key={index}
-                className="p-4 border border-gray-300 rounded-md hover:bg-gray-800 cursor-pointer"
-                onClick={() => {
-                  if (map) {
-                    map.setCenter(place.geometry.location);
-                    map.setZoom(15);
-                    infoWindows[index]?.open(map, markers[index]);
-                  }
-                }}
-              >
-                <h3 className="text-xl font-medium text-white">{place.name}</h3>
-                <p className="text-gray-400">{place.vicinity}</p>
-                <div className="flex items-center mt-2">
-                  <span className="text-yellow-400">★</span>
-                  <span className="text-white ml-1">{place.rating.toFixed(1)}</span>
-                </div>
-              </div>
+            <PlaceCard
+              key={index}
+              place={place}
+              index={index}
+              map={map}
+              infoWindows={infoWindows}
+              markers={markers}
+              />
             ))}
           </div>
         </div>

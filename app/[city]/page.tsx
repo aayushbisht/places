@@ -328,6 +328,20 @@ useEffect(() => {
     }
   };
 
+  const handlePlaceHover = (place: Place, isHovering: boolean) => {
+    const marker = markers.find(m => m.getTitle() === place.name);
+    if (marker) {
+      marker.setIcon({
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 15,
+        fillColor: isHovering ? '#FFD700' : '#000000',
+        fillOpacity: 1,
+        strokeWeight: 2,
+        strokeColor: '#FFFFFF'
+      });
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#0a0a0a]">
       <div className="fixed top-0 left-0 right-0 bg-[#0a0a0a] p-4 z-10">
@@ -369,11 +383,16 @@ useEffect(() => {
         ) : (
           <div className="space-y-4">
             {places.map((place) => (
-              <PlaceCard
+              <div
                 key={place.name}
-                place={place}
-                onClick={() => handlePlaceClick(place)}
-              />
+                onMouseEnter={() => handlePlaceHover(place, true)}
+                onMouseLeave={() => handlePlaceHover(place, false)}
+              >
+                <PlaceCard
+                  place={place}
+                  onClick={() => handlePlaceClick(place)}
+                />
+              </div>
             ))}
           </div>
         )}

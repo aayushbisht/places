@@ -2,15 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import SearchBar from '../components/SearchBar';
 import { loadGoogleMapsScript, getCityLocation, getNearbyPlaces, getPlaceDetails } from '../utils/googleMaps';
 import PlaceCard from '../components/PlaceCard';
 
 interface Place {
   name: string;
   rating: number;
-  placeId?: string;
   vicinity: string;
+  placeId?: string;
   photoUrl?: string;
   geometry: {
     location: {
@@ -22,18 +21,15 @@ interface Place {
 
 type PlaceType = 'places' | 'stays' | 'food';
 
-
-
-
-export default function CityPage({ params }: { params: { city: string } }) {
-    const { city } = useParams();
-    const mapRef = useRef<HTMLDivElement>(null);
-    const [map, setMap] = useState<google.maps.Map | null>(null);
-    const [places, setPlaces] = useState<Place[]>([]);
-    const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
-    const [infoWindows, setInfoWindows] = useState<google.maps.InfoWindow[]>([]);
-    const [activeTab, setActiveTab] = useState<PlaceType>('places');
-    const [isLoading, setIsLoading] = useState(false);
+export default function CityPage() {
+  const { city } = useParams();
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
+  const [infoWindows, setInfoWindows] = useState<google.maps.InfoWindow[]>([]);
+  const [activeTab, setActiveTab] = useState<PlaceType>('places');
+  const [isLoading, setIsLoading] = useState(false);
 
   const getPlaceType = (tab: PlaceType): string => {
     switch (tab) {
@@ -61,8 +57,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
     }
   };
 
-
-useEffect(() => {
+  useEffect(() => {
     if (!city) return;
 
     const initializeMap = async () => {
@@ -113,24 +108,12 @@ useEffect(() => {
             title: place.name,
           });
 
-        //   const infoWindow = new google.maps.InfoWindow({
-        //     content: `
-        //       <div style="padding: 8px;">
-        //         <h3 style="margin: 0 0 8px 0;">${place.name}</h3>
-        //         <p style="margin: 0 0 4px 0;">Rating: ${place.rating}</p>
-        //         <p style="margin: 0;">${place.vicinity}</p>
-        //       </div>
-        //     `,
-        //   });
-        const infoWindow = new google.maps.InfoWindow({
+          const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div class="p-2 bg-white rounded shadow">
-                <h3 class="text-lg font-semibold mb-2">${place.name || ''}</h3>
-                <div class="flex items-center mb-2">
-                  <span class="text-yellow-400">★</span>
-                  <span class="ml-1">${place.rating?.toFixed(1) || 'N/A'}</span>
-                </div>
-                <p class="text-gray-600">${place.vicinity || ''}</p>
+              <div style="padding: 8px;">
+                <h3 style="margin: 0 0 8px 0;">${place.name}</h3>
+                <p style="margin: 0 0 4px 0;">Rating: ${place.rating}</p>
+                <p style="margin: 0;">${place.vicinity}</p>
               </div>
             `,
           });
@@ -142,17 +125,12 @@ useEffect(() => {
               getPlaceDetails(place.placeId).then((details: google.maps.places.PlaceResult) => {
                 const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 400 });
                 const content = `
-           
-                  <div class="p-2">
-                                  <img src="${photoUrl}" alt="${details.name}" class="w-full h-32 object-cover mb-2 rounded" onerror="this.style.display='none'">
-                                  <h3 class="text-lg font-semibold mb-2 text-gray-800">${details.name}</h3>
-                                  <div class="flex items-center mb-2">
-                                    <span class="text-yellow-400">★</span>
-                                    <span class="ml-1 text-gray-800">${details.rating?.toFixed(1) || 'N/A'}</span>
-                                  </div>
-                                  <p class="text-gray-600">${place.vicinity || ''}</p>
-                                  ${details.website ? `<a href="${details.website}" target="_blank" class="text-blue-500 hover:underline">Visit Website</a>` : ''}
-                                </div>
+                  <div style="padding: 8px;">
+                    <h3 style="margin: 0 0 8px 0;">${details.name}</h3>
+                    ${photoUrl ? `<img src="${photoUrl}" style="max-width: 100%; margin-bottom: 8px;" />` : ''}
+                    <p style="margin: 0 0 4px 0;">Rating: ${details.rating}</p>
+                    <p style="margin: 0;">${details.vicinity}</p>
+                  </div>
                 `;
                 infoWindow.setContent(content);
               });
@@ -196,30 +174,19 @@ useEffect(() => {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
-      <div className="fixed top-0 left-0 right-0 bg-[#0a0a0a] p-4 z-10">
-        <div className="max-w-7xl mx-auto">
-          <SearchBar 
-            placeholder="Search another city..."
-            className="max-w-md"
-          />
-        </div>
-      </div>
-
-      <div className="flex h-screen pt-20">
-        <div className="w-1/2 overflow-y-auto p-4">
-          {/* <h2 className="text-2xl font-light mb-4 text-white">Top Places in {decodeURIComponent(params.city)}</h2> */}
-          <h1 className="text-2xl font-bold mb-4">{decodeURIComponent(params.city)}</h1>
+    <div className="flex h-screen">
+      <div className="w-1/3 overflow-y-auto p-4">
+        <h1 className="text-2xl font-bold mb-4">{city}</h1>
         
         <div className="flex space-x-4 mb-6">
           {(['places', 'stays', 'food'] as PlaceType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-md border border-gray-300 ${
+              className={`px-4 py-2 rounded-md ${
                 activeTab === tab
-                  ? 'bg-[#3a3a3a] text-white'
-                  : 'bg-[0a0a0a] text-white hover:bg-[#2a2a2a]'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -227,19 +194,7 @@ useEffect(() => {
           ))}
         </div>
 
-          {/* <div className="space-y-4">
-            {places.map((place, index) => (
-            <PlaceCard
-              key={index}
-              place={place}
-              index={index}
-              map={map}
-              infoWindows={infoWindows}
-              markers={markers}
-              />
-            ))}
-          </div> */}
-          <h2 className="text-xl font-semibold mb-4">{getTabTitle(activeTab)}</h2>
+        <h2 className="text-xl font-semibold mb-4">{getTabTitle(activeTab)}</h2>
         
         {isLoading ? (
           <div className="flex justify-center items-center h-32">
@@ -256,9 +211,8 @@ useEffect(() => {
             ))}
           </div>
         )}
-        </div>
-        <div className="w-1/2" ref={mapRef}></div>
       </div>
-    </main>
+      <div ref={mapRef} className="w-2/3 h-full" />
+    </div>
   );
 } 

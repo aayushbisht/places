@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [showPredictions, setShowPredictions] = useState(false);
@@ -66,13 +68,14 @@ export default function Home() {
     if (inputRef.current) {
       inputRef.current.value = prediction.description;
       setShowPredictions(false);
+      router.push(`/${encodeURIComponent(prediction.description)}`);
     }
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a]">
       <div className="text-center p-8 max-w-md w-full mx-4">
-        <h1 className="text-3xl font-light mb-12">Where do you want to go?</h1>
+        <h1 className="text-3xl font-light mb-12 text-white">Where do you want to go?</h1>
         <div className="relative">
           <input
             ref={inputRef}
@@ -84,11 +87,11 @@ export default function Home() {
             🔍
           </div>
           {showPredictions && predictions.length > 0 && (
-            <div className="absolute w-full mt-1 bg-[#0a0a0a] border  border-gray-300 rounded-md shadow-lg">
+            <div className="absolute w-full mt-1 bg-[#0a0a0a] border border-gray-300 rounded-md shadow-lg">
               {predictions.map((prediction) => (
                 <div
                   key={prediction.place_id}
-                  className="px-4 py-2  hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-1"
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-1"
                   onClick={() => handlePredictionClick(prediction)}
                 >
                   <div className="text-white">{prediction.description}</div>

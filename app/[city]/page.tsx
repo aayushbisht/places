@@ -8,6 +8,7 @@ interface Place {
   name: string;
   rating: number;
   vicinity: string;
+  photoUrl?: string;
   geometry: {
     location: {
       lat: number;
@@ -21,6 +22,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
   const [places, setPlaces] = useState<Place[]>([]);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
+  const [infoWindows, setInfoWindows] = useState<google.maps.InfoWindow[]>([]);
 
   useEffect(() => {
     const initializeMap = async () => {
@@ -42,12 +44,17 @@ export default function CityPage({ params }: { params: { city: string } }) {
               
               service.nearbySearch({
                 location: location,
-                radius: 5000,
+                radius: 30000,
                 type: 'tourist_attraction',
+                rankBy: google.maps.places.RankBy.PROMINENCE,
+
               }, (results, status) => {
                 if (status === 'OK' && results) {
                   markers.forEach(marker => marker.setMap(null));
+                  infoWindows.forEach(window => window.close());
+                  
                   const newMarkers: google.maps.Marker[] = [];
+                  const newInfoWindows: google.maps.InfoWindow[] = [];
 
                   const formattedPlaces = results.slice(0, 20).map(place => {
                     const marker = new google.maps.Marker({
@@ -55,7 +62,89 @@ export default function CityPage({ params }: { params: { city: string } }) {
                       map: newMap,
                       title: place.name,
                     });
+
+                    const infoWindow = new google.maps.InfoWindow({
+                      content: `
+                        <div class="p-2">
+                          <h3 class="text-lg font-semibold mb-2">${place.name}</h3>
+                          <div class="flex items-center mb-2">
+                            <span class="text-yellow-400">★</span>
+                            <span class="ml-1">${place.rating?.toFixed(1) || 'N/A'}</span>
+                          </div>
+                          <p class="text-gray-600">${place.vicinity || ''}</p>
+                        </div>
+                      `,
+                    });
+
+                    marker.addListener('click', () => {
+                      newInfoWindows.forEach(window => window.close());
+                      infoWindow.open(newMap, marker);
+                    });
+
                     newMarkers.push(marker);
+                    newInfoWindows.push(infoWindow);
+
+                    service.getDetails(
+                      { 
+                        placeId: place.place_id!, 
+                        fields: ['photos', 'name', 'rating', 'vicinity', 'types', 'website', 'formatted_address']
+                      },
+                      (placeDetails, status) => {
+                        console.log('Place Details:', {
+                          name: placeDetails?.name,
+                          status,
+                          photos: placeDetails?.photos,
+                          photoCount: placeDetails?.photos?.length || 0,
+                          types: placeDetails?.types
+                        });
+
+                        if (status === 'OK' && placeDetails) {
+                          const photos = placeDetails.photos || [];
+                          if (photos.length > 0) {
+                            try {
+                              const photoUrl = photos[0].getUrl({
+                                maxWidth: 400,
+                                maxHeight: 300
+                              });
+                              
+                              console.log('Generated photo URL:', photoUrl);
+                              
+                              const updatedContent = `
+                                <div class="p-2">
+                                  <img src="${photoUrl}" alt="${place.name}" class="w-full h-32 object-cover mb-2 rounded" onerror="this.style.display='none'">
+                                  <h3 class="text-lg font-semibold mb-2 text-gray-800">${place.name}</h3>
+                                  <div class="flex items-center mb-2">
+                                    <span class="text-yellow-400">★</span>
+                                    <span class="ml-1 text-gray-800">${place.rating?.toFixed(1) || 'N/A'}</span>
+                                  </div>
+                                  <p class="text-gray-600">${place.vicinity || ''}</p>
+                                  ${placeDetails.website ? `<a href="${placeDetails.website}" target="_blank" class="text-blue-500 hover:underline">Visit Website</a>` : ''}
+                                </div>
+                              `;
+                              infoWindow.setContent(updatedContent);
+                            } catch (error) {
+                              console.error('Error getting photo URL:', error);
+                              const fallbackContent = `
+                                <div class="p-2">
+                                  <h3 class="text-lg font-semibold mb-2">${place.name}</h3>
+                                  <div class="flex items-center mb-2">
+                                    <span class="text-yellow-400">★</span>
+                                    <span class="ml-1">${place.rating?.toFixed(1) || 'N/A'}</span>
+                                  </div>
+                                  <p class="text-gray-600">${place.vicinity || ''}</p>
+                                  ${placeDetails.website ? `<a href="${placeDetails.website}" target="_blank" class="text-blue-500 hover:underline">Visit Website</a>` : ''}
+                                </div>
+                              `;
+                              infoWindow.setContent(fallbackContent);
+                            }
+                          } else {
+                            console.log('No photos available for:', place.name);
+                          }
+                        } else {
+                          console.error('Failed to get place details:', status);
+                        }
+                      }
+                    );
 
                     return {
                       name: place.name!,
@@ -72,6 +161,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
 
                   setPlaces(formattedPlaces);
                   setMarkers(newMarkers);
+                  setInfoWindows(newInfoWindows);
                   setMap(newMap);
                 }
               });
@@ -109,6 +199,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
                   if (map) {
                     map.setCenter(place.geometry.location);
                     map.setZoom(15);
+                    infoWindows[index]?.open(map, markers[index]);
                   }
                 }}
               >

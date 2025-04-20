@@ -8,6 +8,7 @@ interface Place {
     vicinity: string;
     photoUrl?: string;
     placeId?: string;
+    number?: number;
     geometry: {
       location: {
         lat: number;
@@ -32,7 +33,14 @@ const PlaceCard = ({ place, onClick }: PlaceCardProps) => {
       onClick={onClick}
     >
       <div className="flex-1 pr-4">
-        <h3 className="text-xl font-medium text-white">{place.name}</h3>
+        <div className="flex items-center gap-2">
+          {place.number && (
+            <div className="w-6 h-6 rounded-sm border-1 bg-[#0a0a0a] flex items-center justify-center text-white font-bold">
+              {place.number}
+            </div>
+          )}
+          <h3 className="text-xl font-medium text-white">{place.name}</h3>
+        </div>
         <p className="text-gray-400">{place.vicinity}</p>
         <div className="flex items-center mt-2">
           <span className="text-yellow-400">★</span>
@@ -42,7 +50,7 @@ const PlaceCard = ({ place, onClick }: PlaceCardProps) => {
           href={mapsUrl}
           target="_blank"
           onClick={(e) => e.stopPropagation()}
-          className="text-blue-400 hover:text-blue-300 text-sm mt-2 inline-block"
+          className="text-[#bababa] hover:text-blue-300 text-sm mt-2 inline-block"
         >
           View on Google Maps →
         </Link>

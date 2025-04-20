@@ -94,21 +94,21 @@ useEffect(() => {
       try {
         const cityLocation = await getCityLocation(city as string);
         const nearbyPlaces = await getNearbyPlaces(map, cityLocation, getPlaceType(activeTab));
+        console.log(nearbyPlaces);
         
-        // Fetch photo URLs for each place
         const placesWithPhotos = await Promise.all(
-          nearbyPlaces.map(async (place) => {
+          nearbyPlaces.map(async (place, index) => {
             if (place.placeId) {
               try {
                 const details = await getPlaceDetails(place.placeId);
                 const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 400 });
-                return { ...place, photoUrl };
+                return { ...place, photoUrl, number: index + 1 };
               } catch (error) {
                 console.error('Error fetching place details:', error);
-                return place;
+                return { ...place, number: index + 1 };
               }
             }
-            return place;
+            return { ...place, number: index + 1 };
           })
         );
         
@@ -122,7 +122,7 @@ useEffect(() => {
         const newMarkers: google.maps.Marker[] = [];
         const newInfoWindows: google.maps.InfoWindow[] = [];
 
-        placesWithPhotos.forEach((place: Place) => {
+        placesWithPhotos.forEach((place: Place, index: number) => {
           const marker = new google.maps.Marker({
             position: new google.maps.LatLng(
               place.geometry.location.lat,
@@ -130,10 +130,23 @@ useEffect(() => {
             ),
             map: map,
             title: place.name,
+            label: {
+              text: (index + 1).toString(),
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            },
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 15,
+              fillColor: '#000000',
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: '#FFFFFF'
+            }
           });
 
-    
-        const infoWindow = new google.maps.InfoWindow({
+          const infoWindow = new google.maps.InfoWindow({
             content: `
               <div class="p-2 bg-white rounded shadow">
                 <h3 class="text-lg font-semibold mb-2 text-black">${place.name || ''}</h3>
@@ -152,7 +165,6 @@ useEffect(() => {
             if (place.placeId) {
               getPlaceDetails(place.placeId).then((details: google.maps.places.PlaceResult) => {
                 const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 400 });
-                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${place.geometry.location.lat},${place.geometry.location.lng}&query_place_id=${place.placeId}`;
                 const content = `
                   <div class="p-2">
                     <img src="${photoUrl}" alt="${details.name}" class="w-full h-32 object-cover mb-2 rounded" onerror="this.style.display='none'">
@@ -163,7 +175,7 @@ useEffect(() => {
                     </div>
                     <p class="text-gray-600">${place.vicinity || ''}</p>
                     ${details.website ? `<a href="${details.website}" target="_blank" class="text-blue-500 hover:underline">Visit Website</a><br/>` : ''}
-                    <a href="${mapsUrl}" target="_blank" class="text-blue-500 hover:underline">Open in Google Maps</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=${place.geometry.location.lat},${place.geometry.location.lng}&query_place_id=${place.placeId}" target="_blank" class="text-blue-500 hover:underline">Open in Google Maps</a>
                   </div>
                 `;
                 infoWindow.setContent(content);
@@ -221,7 +233,7 @@ useEffect(() => {
       <div className="flex h-screen pt-20">
         <div className="w-1/2 overflow-y-auto p-4">
           {/* <h2 className="text-2xl font-light mb-4 text-white">Top Places in {decodeURIComponent(params.city)}</h2> */}
-          <h1 className="text-2xl font-bold mb-4">{decodeURIComponent(params.city)}</h1>
+          <h1 className="text-2xl font-bold mb-4">{decodeURIComponent(city)}</h1>
         
         <div className="flex space-x-4 mb-6">
           {(['places', 'stays', 'food'] as PlaceType[]).map((tab) => (
